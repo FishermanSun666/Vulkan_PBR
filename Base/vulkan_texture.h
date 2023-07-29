@@ -403,5 +403,53 @@ namespace vulkan
 			vkDestroyBuffer(device->logicalDevice, stagingBuffer, nullptr);
 			updateDescriptor();
 		}
+
+		void initImage(uint32_t dimension, uint32_t numMips, VkFormat format)
+		{
+			assert(device);
+			// Image
+			VkImageCreateInfo imageCI{};
+			imageCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+			imageCI.imageType = VK_IMAGE_TYPE_2D;
+			imageCI.format = format;
+			imageCI.extent.width = dimension;
+			imageCI.extent.height = dimension;
+			imageCI.extent.depth = 1;
+			imageCI.mipLevels = numMips;
+			imageCI.arrayLayers = 6;
+			imageCI.samples = VK_SAMPLE_COUNT_1_BIT;
+			imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
+			imageCI.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+			imageCI.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+			device->createImage(imageCI, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, deviceMemory);
+			// View
+			VkImageViewCreateInfo viewCI{};
+			viewCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+			viewCI.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+			viewCI.format = format;
+			viewCI.subresourceRange = {};
+			viewCI.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			viewCI.subresourceRange.levelCount = numMips;
+			viewCI.subresourceRange.layerCount = 6;
+			viewCI.image = image;
+			VK_CHECK_RESULT(vkCreateImageView(device->logicalDevice, &viewCI, nullptr, &imageView));
+			// Sampler
+			VkSamplerCreateInfo samplerCI{};
+			samplerCI.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+			samplerCI.magFilter = VK_FILTER_LINEAR;
+			samplerCI.minFilter = VK_FILTER_LINEAR;
+			samplerCI.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+			samplerCI.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			samplerCI.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			samplerCI.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			samplerCI.minLod = 0.0f;
+			samplerCI.maxLod = static_cast<float>(numMips);
+			samplerCI.maxAnisotropy = 1.0f;
+			samplerCI.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+			VK_CHECK_RESULT(vkCreateSampler(device->logicalDevice, &samplerCI, nullptr, &sampler));
+
+			updateDescriptor();
+		}
 	};
+
 }

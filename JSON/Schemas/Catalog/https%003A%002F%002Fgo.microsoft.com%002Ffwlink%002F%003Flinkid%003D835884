@@ -582,7 +582,7 @@
     {
       "name": "bitbucket-pipelines",
       "description": "Bitbucket Pipelines CI/CD manifest schema",
-      "url": "https://bitbucket.org/atlassianlabs/atlascode/raw/main/resources/schemas/pipelines-schema.json",
+      "url": "https://bitbucket.org/atlassianlabs/intellij-bitbucket-references-plugin/raw/master/src/main/resources/schemas/bitbucket-pipelines.schema.json",
       "fileMatch": ["bitbucket-pipelines.yml"]
     },
     {
@@ -2704,6 +2704,12 @@
         "open-rpc.yaml"
       ],
       "url": "https://meta.open-rpc.org/"
+    },
+    {
+      "name": "ops.yaml",
+      "description": "Schema for Ops configuration file (ops.yaml)",
+      "fileMatch": ["ops.yml", "ops.yaml"],
+      "url": "https://raw.githubusercontent.com/LeShaunJ/ops-schema/main/ops.schema.json"
     },
     {
       "name": "ONe's service descriptor",

@@ -299,7 +299,7 @@ void VulkanExampleBase::renderLoop()
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
-			if (msg.message = WM_QUIT)
+			if (WM_QUIT == msg.message)
 			{
 				quitMessageReceived = true;
 				break;
@@ -534,6 +534,7 @@ void VulkanExampleBase::initVulkan()
 		exit(res);
 	}
 	logicalDevice = device->logicalDevice;
+	vkGetDeviceQueue(logicalDevice, device->queueFamilyIndices.graphicsFamily.value(), 0, &queue);
 	//Suitable depth format
 	std::vector<VkFormat> depthFormats = { VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D16_UNORM };
 	VkBool32 validDepthFormat = false;
@@ -561,6 +562,7 @@ HWND VulkanExampleBase::setupWindow(HINSTANCE hinstance, WNDPROC wndproc)
 
 	WNDCLASSEX wndClass;
 	wndClass.cbSize = sizeof(WNDCLASSEX);
+	wndClass.style = CS_HREDRAW | CS_VREDRAW;
 	wndClass.lpfnWndProc = wndproc;
 	wndClass.cbClsExtra = 0;
 	wndClass.cbWndExtra = 0;
@@ -810,6 +812,7 @@ void VulkanExampleBase::setupFrameBuffer()
 		//Check if device supports requested sample count for color and depth frame buffer
 
 		VkImageCreateInfo imageCI{};
+		imageCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 		imageCI.imageType = VK_IMAGE_TYPE_2D;
 		imageCI.format = swapchain.colorFormat;
 		imageCI.extent.width = width;

@@ -25,9 +25,11 @@
 
 #define GLFW_INCLUDE_VULKAN
 
-#define SHADER_PATH "../Shaders/"
-#define TEXTURE_PATH "../Assets/Textures/"
-#define MODEL_PATH "../Assets/Models/"
+const std::string SHADER_PATH = "../Shaders/";
+const std::string ENVIRONMENT_PATH = "../Assets/Environments/";
+const std::string MODEL_PATH = "../Assets/Models/";
+const std::string TEXTURE_PATH = "../Assets/Textures/";
+const std::string FONT_PATH = "../Assets/Fonts/";
 
 #define VK_CHECK_RESULT(f)																				\
 {																										\

@@ -133,11 +133,13 @@
   <ItemGroup>
     <ClCompile Include="Base\vulkan_example_base.cpp" />
     <ClCompile Include="Base\vulkan_glTF_model_loader.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\main.cpp" />
+    <ClCompile Include="Source\pbr_renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Base\camera.h" />
     <ClInclude Include="Base\keycodes.h" />
+    <ClInclude Include="Base\ui.h" />
     <ClInclude Include="Base\vulkan_base.h" />
     <ClInclude Include="Base\vulkan_device.h" />
     <ClInclude Include="Base\vulkan_example_base.h" />
@@ -146,6 +148,7 @@
     <ClInclude Include="Base\vulkan_texture.h" />
     <ClInclude Include="Base\vulkan_uitls.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Source\pbr_renderer.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Vulkan_PBR.rc" />
