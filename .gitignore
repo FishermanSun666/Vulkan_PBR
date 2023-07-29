@@ -30,3 +30,4 @@
 *.exe
 *.out
 *.app
+/.vs/Vulkan_PBR
