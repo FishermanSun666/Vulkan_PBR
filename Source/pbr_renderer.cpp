@@ -11,6 +11,109 @@ void Renderer::recordCommandBuffers()
 
 }
 
+void Renderer::prepare()
+{
+	VulkanExampleBase::prepare();
+
+	camera.init(width, height);
+
+	waitFences.resize(renderAhead);
+	presentCompleteSemaphores.resize(renderAhead);
+	renderCompleteSemaphores.resize(renderAhead);
+	commandBuffers.resize(swapchain.imageCount);
+	uniformBuffers.resize(swapchain.imageCount);
+	descriptorSets.resize(swapchain.imageCount);
+	// Command buffer execution fences
+	for (auto& waitFence : waitFences)
+	{
+		VkFenceCreateInfo fenceCI{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VK_FENCE_CREATE_SIGNALED_BIT };
+		VK_CHECK_RESULT(vkCreateFence(logicalDevice, &fenceCI, nullptr, &waitFence));
+	}
+	// Queue ordering semaphores
+	for (auto& semaphore : presentCompleteSemaphores)
+	{
+		VkSemaphoreCreateInfo semaphoreCI{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, nullptr, 0 };
+		VK_CHECK_RESULT(vkCreateSemaphore(logicalDevice, &semaphoreCI, nullptr, &semaphore));
+	}
+	for (auto& semaphore : renderCompleteSemaphores)
+	{
+		VkSemaphoreCreateInfo semaphoreCI{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, nullptr, 0 };
+		VK_CHECK_RESULT(vkCreateSemaphore(logicalDevice, &semaphoreCI, nullptr, &semaphore));
+	}
+	// Command buffers
+	{
+		VkCommandBufferAllocateInfo cmdBufAllocateInfo{};
+		cmdBufAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		cmdBufAllocateInfo.commandPool = cmdPool;
+		cmdBufAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		cmdBufAllocateInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
+		VK_CHECK_RESULT(vkAllocateCommandBuffers(logicalDevice, &cmdBufAllocateInfo, commandBuffers.data()));
+	}
+
+	loadAssets();
+	generateBRDFLUT();
+	generateCubemaps();
+	prepareUniformBuffers();
+	setupDescriptors();
+	preparePipelines();
+
+	ui = new UI(device, renderPass, queue, pipelineCache, settings.sampleCount);
+	updateOverlay();
+
+	recordCommandBuffers();
+
+	prepared = true;
+}
+
+void Renderer::loadAssets()
+{
+	struct stat info;
+	if (stat(ASSETS_PATH.c_str(), &info) != 0)
+	{
+		std::string msg = "Could not locate asset path in \"" + ASSETS_PATH + "\".\nMake sure binary is run from correct relative directory!";
+		std::cerr << msg << std::endl;
+		exit(-1);
+	}
+	readDirectory(ENVIRONMENT_PATH, "*.ktx", environments, false);
+
+	textureSet.empty.loadFromFile(ASSETS_PATH + "textures/empty.ktx", VK_FORMAT_R8G8B8A8_UNORM, device, queue);
+
+	std::string sceneFile = MODEL_PATH + "DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf";
+	std::string envMapFile = ENVIRONMENT_PATH + "papermill.ktx";
+	for (size_t i = 0; i < args.size(); i++)
+	{
+		if ((std::string(args[i]).find(".gltf") != std::string::npos) || (std::string(args[i]).find(".glb") != std::string::npos))
+		{
+			std::ifstream file(args[i]);
+			if (file.good())
+			{
+				sceneFile = args[i];
+			}
+			else
+			{
+				std::cout << "could not load \"" << args[i] << "\"" << std::endl;
+			}
+		}
+		if (std::string(args[i]).find(".ktx") != std::string::npos)
+		{
+			std::ifstream file(args[i]);
+			if (file.good())
+			{
+				envMapFile = args[i];
+			}
+			else
+			{
+				std::cout << "could not load \"" << args[i] << "\"" << std::endl;
+			}
+		}
+	}
+
+	loadScene(sceneFile.c_str());
+	modelSet.skybox.loadFromFile(MODEL_PATH + "Box/glTF-Embedded/Box.gltf", device, queue);
+
+	loadEnvironment(envMapFile.c_str());
+}
+
 void Renderer::loadScene(std::string filename)
 {
 	std::cout << "Loading scene from " << filename << std::endl;
@@ -36,6 +139,257 @@ void Renderer::loadEnvironment(std::string filename) {
 	}
 	textureSet.environmentCube.loadFromFile(filename, VK_FORMAT_R16G16B16A16_SFLOAT, device, queue);
 	generateCubemaps();
+}
+//Generate a BRDF integration map storing roughness/NdotV as a look-up-table
+void Renderer::generateBRDFLUT()
+{
+	auto tStart = std::chrono::high_resolution_clock::now();
+
+	const VkFormat format = VK_FORMAT_R16G16_SFLOAT;
+	const int32_t dim = 512;
+
+	// Image
+	VkImageCreateInfo imageCI{};
+	imageCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageCI.imageType = VK_IMAGE_TYPE_2D;
+	imageCI.format = format;
+	imageCI.extent.width = dim;
+	imageCI.extent.height = dim;
+	imageCI.extent.depth = 1;
+	imageCI.mipLevels = 1;
+	imageCI.arrayLayers = 1;
+	imageCI.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageCI.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	device->createImage(imageCI, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureSet.lutBrdf.image, textureSet.lutBrdf.deviceMemory);
+
+	// View
+	VkImageViewCreateInfo viewCI{};
+	viewCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	viewCI.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	viewCI.format = format;
+	viewCI.subresourceRange = {};
+	viewCI.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	viewCI.subresourceRange.levelCount = 1;
+	viewCI.subresourceRange.layerCount = 1;
+	viewCI.image = textureSet.lutBrdf.image;
+	VK_CHECK_RESULT(vkCreateImageView(logicalDevice, &viewCI, nullptr, &textureSet.lutBrdf.imageView));
+
+	// Sampler
+	VkSamplerCreateInfo samplerCI{};
+	samplerCI.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerCI.magFilter = VK_FILTER_LINEAR;
+	samplerCI.minFilter = VK_FILTER_LINEAR;
+	samplerCI.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerCI.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	samplerCI.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	samplerCI.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	samplerCI.minLod = 0.0f;
+	samplerCI.maxLod = 1.0f;
+	samplerCI.maxAnisotropy = 1.0f;
+	samplerCI.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+	VK_CHECK_RESULT(vkCreateSampler(logicalDevice, &samplerCI, nullptr, &textureSet.lutBrdf.sampler));
+
+	// FB, Att, RP, Pipe, etc.
+	VkAttachmentDescription attDesc{};
+	// Color attachment
+	attDesc.format = format;
+	attDesc.samples = VK_SAMPLE_COUNT_1_BIT;
+	attDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attDesc.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	VkAttachmentReference colorReference = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+
+	VkSubpassDescription subpassDescription{};
+	subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpassDescription.colorAttachmentCount = 1;
+	subpassDescription.pColorAttachments = &colorReference;
+
+	// Use subpass dependencies for layout transitions
+	std::array<VkSubpassDependency, 2> dependencies;
+	dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependencies[0].dstSubpass = 0;
+	dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+	dependencies[1].srcSubpass = 0;
+	dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+	dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+	// Create the actual renderpass
+	VkRenderPassCreateInfo renderPassCI{};
+	renderPassCI.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderPassCI.attachmentCount = 1;
+	renderPassCI.pAttachments = &attDesc;
+	renderPassCI.subpassCount = 1;
+	renderPassCI.pSubpasses = &subpassDescription;
+	renderPassCI.dependencyCount = 2;
+	renderPassCI.pDependencies = dependencies.data();
+
+	VkRenderPass renderpass;
+	VK_CHECK_RESULT(vkCreateRenderPass(logicalDevice, &renderPassCI, nullptr, &renderpass));
+
+	VkFramebufferCreateInfo framebufferCI{};
+	framebufferCI.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	framebufferCI.renderPass = renderpass;
+	framebufferCI.attachmentCount = 1;
+	framebufferCI.pAttachments = &textureSet.lutBrdf.imageView;
+	framebufferCI.width = dim;
+	framebufferCI.height = dim;
+	framebufferCI.layers = 1;
+
+	VkFramebuffer framebuffer;
+	VK_CHECK_RESULT(vkCreateFramebuffer(logicalDevice, &framebufferCI, nullptr, &framebuffer));
+
+	// Desriptors
+	VkDescriptorSetLayout descriptorsetlayout;
+	VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI{};
+	descriptorSetLayoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(logicalDevice, &descriptorSetLayoutCI, nullptr, &descriptorsetlayout));
+
+	// Pipeline layout
+	VkPipelineLayout pipelinelayout;
+	VkPipelineLayoutCreateInfo pipelineLayoutCI{};
+	pipelineLayoutCI.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutCI.setLayoutCount = 1;
+	pipelineLayoutCI.pSetLayouts = &descriptorsetlayout;
+	VK_CHECK_RESULT(vkCreatePipelineLayout(logicalDevice, &pipelineLayoutCI, nullptr, &pipelinelayout));
+
+	// Pipeline
+	VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCI{};
+	inputAssemblyStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	inputAssemblyStateCI.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+	VkPipelineRasterizationStateCreateInfo rasterizationStateCI{};
+	rasterizationStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+	rasterizationStateCI.polygonMode = VK_POLYGON_MODE_FILL;
+	rasterizationStateCI.cullMode = VK_CULL_MODE_NONE;
+	rasterizationStateCI.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	rasterizationStateCI.lineWidth = 1.0f;
+
+	VkPipelineColorBlendAttachmentState blendAttachmentState{};
+	blendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	blendAttachmentState.blendEnable = VK_FALSE;
+
+	VkPipelineColorBlendStateCreateInfo colorBlendStateCI{};
+	colorBlendStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	colorBlendStateCI.attachmentCount = 1;
+	colorBlendStateCI.pAttachments = &blendAttachmentState;
+
+	VkPipelineDepthStencilStateCreateInfo depthStencilStateCI{};
+	depthStencilStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	depthStencilStateCI.depthTestEnable = VK_FALSE;
+	depthStencilStateCI.depthWriteEnable = VK_FALSE;
+	depthStencilStateCI.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+	depthStencilStateCI.front = depthStencilStateCI.back;
+	depthStencilStateCI.back.compareOp = VK_COMPARE_OP_ALWAYS;
+
+	VkPipelineViewportStateCreateInfo viewportStateCI{};
+	viewportStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	viewportStateCI.viewportCount = 1;
+	viewportStateCI.scissorCount = 1;
+
+	VkPipelineMultisampleStateCreateInfo multisampleStateCI{};
+	multisampleStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+	multisampleStateCI.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+	std::vector<VkDynamicState> dynamicStateEnables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+	VkPipelineDynamicStateCreateInfo dynamicStateCI{};
+	dynamicStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	dynamicStateCI.pDynamicStates = dynamicStateEnables.data();
+	dynamicStateCI.dynamicStateCount = static_cast<uint32_t>(dynamicStateEnables.size());
+
+	VkPipelineVertexInputStateCreateInfo emptyInputStateCI{};
+	emptyInputStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+	std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
+
+	VkGraphicsPipelineCreateInfo pipelineCI{};
+	pipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineCI.layout = pipelinelayout;
+	pipelineCI.renderPass = renderpass;
+	pipelineCI.pInputAssemblyState = &inputAssemblyStateCI;
+	pipelineCI.pVertexInputState = &emptyInputStateCI;
+	pipelineCI.pRasterizationState = &rasterizationStateCI;
+	pipelineCI.pColorBlendState = &colorBlendStateCI;
+	pipelineCI.pMultisampleState = &multisampleStateCI;
+	pipelineCI.pViewportState = &viewportStateCI;
+	pipelineCI.pDepthStencilState = &depthStencilStateCI;
+	pipelineCI.pDynamicState = &dynamicStateCI;
+	pipelineCI.stageCount = 2;
+	pipelineCI.pStages = shaderStages.data();
+
+	// Look-up-table (from BRDF) pipeline		
+	shaderStages = {
+		loadShader(logicalDevice, "genbrdflut.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
+		loadShader(logicalDevice, "genbrdflut.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
+	};
+	VkPipeline pipeline;
+	VK_CHECK_RESULT(vkCreateGraphicsPipelines(logicalDevice, pipelineCache, 1, &pipelineCI, nullptr, &pipeline));
+	for (auto shaderStage : shaderStages)
+	{
+		vkDestroyShaderModule(logicalDevice, shaderStage.module, nullptr);
+	}
+
+	// Render
+	VkClearValue clearValues[1];
+	clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+
+	VkRenderPassBeginInfo renderPassBeginInfo{};
+	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassBeginInfo.renderPass = renderpass;
+	renderPassBeginInfo.renderArea.extent.width = dim;
+	renderPassBeginInfo.renderArea.extent.height = dim;
+	renderPassBeginInfo.clearValueCount = 1;
+	renderPassBeginInfo.pClearValues = clearValues;
+	renderPassBeginInfo.framebuffer = framebuffer;
+
+	VkCommandBuffer cmdBuf = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+	device->beginCommandBuffer(cmdBuf);
+	vkCmdBeginRenderPass(cmdBuf, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	VkViewport viewport{};
+	viewport.width = (float)dim;
+	viewport.height = (float)dim;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+
+	VkRect2D scissor{};
+	scissor.extent.width = dim;
+	scissor.extent.height = dim;
+
+	vkCmdSetViewport(cmdBuf, 0, 1, &viewport);
+	vkCmdSetScissor(cmdBuf, 0, 1, &scissor);
+	vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+	vkCmdDraw(cmdBuf, 3, 1, 0, 0);
+	vkCmdEndRenderPass(cmdBuf);
+	device->flushCommandBuffer(cmdBuf, queue);
+
+	vkQueueWaitIdle(queue);
+
+	vkDestroyPipeline(logicalDevice, pipeline, nullptr);
+	vkDestroyPipelineLayout(logicalDevice, pipelinelayout, nullptr);
+	vkDestroyRenderPass(logicalDevice, renderpass, nullptr);
+	vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);
+	vkDestroyDescriptorSetLayout(logicalDevice, descriptorsetlayout, nullptr);
+
+	textureSet.lutBrdf.descriptor.imageView = textureSet.lutBrdf.imageView;
+	textureSet.lutBrdf.descriptor.sampler = textureSet.lutBrdf.sampler;
+	textureSet.lutBrdf.descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	textureSet.lutBrdf.device = device;
+
+	auto tEnd = std::chrono::high_resolution_clock::now();
+	auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
+	std::cout << "Generating BRDF LUT took " << tDiff << " ms" << std::endl;
 }
 
 //Offline generation for the cup maps used for PBR lighting

@@ -61,6 +61,23 @@ public:
 		bool down = false;
 	} keys;
 
+	void init(float width, float height)
+	{
+		type = Camera::CameraType::LOOK_AT;
+
+		setPerspective(45.0f, width / height, 0.1f, 256.0f);
+		rotationSpeed = 0.25f;
+		movementSpeed = 0.1f;
+		reset();
+	}
+
+	void reset()
+	{
+		this->position = glm::vec3(0.0f, 0.0f, 1.0f);
+		this->rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+		updateViewMatrix();
+	}
+
 	bool moving()
 	{
 		return keys.left || keys.right || keys.up || keys.down;
@@ -87,13 +104,6 @@ public:
 	void updateAspectRatio(float aspect)
 	{
 		matrices.perspective = glm::perspective(glm::radians(fov), aspect, znear, zfar);
-	}
-
-	void reset()
-	{
-		this->position = glm::vec3(0.0f, 0.0f, 1.0f);
-		this->rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-		updateViewMatrix();
 	}
 
 	void setPosition(glm::vec3 position)
