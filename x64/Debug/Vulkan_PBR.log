@@ -1,0 +1,12 @@
+﻿  vulkan_example_base.cpp
+D:\PersonalProject\Vulkan_PBR\Base\vulkan_example_base.cpp(285,18): warning C4244: '=': conversion from 'float' to 'uint32_t', possible loss of data
+  vulkan_glTF_model_loader.cpp
+D:\PersonalProject\Vulkan_PBR\Base\vulkan_glTF_model_loader.cpp(82,9): warning C4552: '+': result of expression not used
+  main.cpp
+  pbr_renderer.cpp
+D:\PersonalProject\Vulkan_PBR\Source\pbr_renderer.cpp(190,21): warning C4244: 'argument': conversion from 'uint32_t' to 'float', possible loss of data
+D:\PersonalProject\Vulkan_PBR\Source\pbr_renderer.cpp(190,14): warning C4244: 'argument': conversion from 'uint32_t' to 'float', possible loss of data
+  Generating Code...
+main.obj : warning LNK4006: "struct VkPipelineShaderStageCreateInfo __cdecl loadShader(struct VkDevice_T *,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >,enum VkShaderStageFlagBits)" (?loadShader@@YA?AUVkPipelineShaderStageCreateInfo@@PEAUVkDevice_T@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@W4VkShaderStageFlagBits@@@Z) already defined in pbr_renderer.obj; second definition ignored
+main.obj : warning LNK4006: "void __cdecl readDirectory(class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &,class std::map<class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >,struct std::less<class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > >,class std::allocator<struct std::pair<class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const ,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > > > > &,bool)" (?readDirectory@@YAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@0AEAV?$map@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V12@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V12@@std@@@2@@2@_N@Z) already defined in pbr_renderer.obj; second definition ignored
+  Vulkan_PBR.vcxproj -> D:\PersonalProject\Vulkan_PBR\x64\Debug\Vulkan_PBR.lib

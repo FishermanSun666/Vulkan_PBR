@@ -1136,7 +1136,8 @@ namespace vkglTF
 		}
 
 		// Copy from staging buffers
-		VkCommandBuffer copyCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+		VkCommandBuffer copyCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+		device->beginCommandBuffer(copyCmd);
 
 		VkBufferCopy copyRegion = {};
 

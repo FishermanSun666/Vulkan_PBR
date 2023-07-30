@@ -96,23 +96,9 @@ public:
 	const uint32_t renderAhead = 2;
 	uint32_t frameIndex = 0;
 	//Animation
-	struct Animation
-	{
-		bool animate = true;
-		int32_t animationIndex = 0;
-		float animationTimer = 0.0f;
-
-		void open()
-		{
-			animate = true;
-		}
-
-		void reset()
-		{
-			animationIndex = 0;
-			animationTimer = 0.0f;
-		}
-	} animation ;
+	bool animate = true;
+	int32_t animationIndex = 0;
+	float animationTimer = 0.0f;
 	
 	//Background
 	bool displayBackground = true;

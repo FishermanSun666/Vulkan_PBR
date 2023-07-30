@@ -10,7 +10,6 @@
 #include <gli/gli.hpp>
 #include <glm/gtx/string_cast.hpp>
 
-#include "tiny_gltf.h"
 
 #if defined(_WIN32) && defined(ERROR) && defined(TINYGLTF_ENABLE_DRACO) 
 #undef ERROR
@@ -18,6 +17,8 @@
 #endif
 
 #define TINYGLTF_NO_STB_IMAGE_WRITE
+
+#include "tiny_gltf.h"
 
 #define MAX_NUM_JOINTS 128u
 
