@@ -40,10 +40,11 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -102,7 +103,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);WIN32;_WINDOWS;VK_USE_PLATFORM_WIN32_KHR;NOMINMAX;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;VK_EXAMPLE_DATA_DIR="D:/PersonalProject/Vulka_PBR/data/";CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);WIN32;_WINDOWS;VK_USE_PLATFORM_WIN32_KHR;NOMINMAX;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;VK_EXAMPLE_DATA_DIR="D:/PersonalProject/Vulka_PBR/data/";CMAKE_INTDIR="Debug";_CONSOLE;%(PreprocessorDefinitions);WIN32;_WINDOWS;VK_USE_PLATFORM_WIN32_KHR;NOMINMAX;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;VK_EXAMPLE_DATA_DIR="D:/PersonalProject/Vulka_PBR/data/";CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)Libraries\vulkan;$(ProjectDir)Libraries\tinygltf;$(ProjectDir)Libraries\imgui;$(ProjectDir)Libraries\glm;$(ProjectDir)Libraries\gli;$(ProjectDir)Libraries;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -111,7 +112,9 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\PersonalProject\Vulkan_PBR\Libraries\vulkan;D:\PersonalProject\Vulkan_PBR\Libraries\vk_video;D:\PersonalProject\Vulkan_PBR\Libraries\tinygltf;D:\PersonalProject\Vulkan_PBR\Libraries\imgui;D:\PersonalProject\Vulkan_PBR\Libraries\glm;D:\PersonalProject\Vulkan_PBR\Libraries\gli;D:\PersonalProject\Vulkan_PBR\Libraries\vulkan;D:\PersonalProject\Vulkan_PBR\Libraries\vk_video;D:\PersonalProject\Vulkan_PBR\Libraries\tinygltf;D:\PersonalProject\Vulkan_PBR\Libraries\imgui;D:\PersonalProject\Vulkan_PBR\Libraries\glm;D:\PersonalProject\Vulkan_PBR\Libraries\gli;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Base\x64\Debug\Base.lib;Bin\vulkan\vulkan-1.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
@@ -123,7 +126,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);WIN32;_WINDOWS;VK_USE_PLATFORM_WIN32_KHR;NOMINMAX;_USE_MATH_DEFINES</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);WIN32;_WINDOWS;VK_USE_PLATFORM_WIN32_KHR;NOMINMAX;_USE_MATH_DEFINES;_CONSOLE;%(PreprocessorDefinitions);WIN32;_WINDOWS;VK_USE_PLATFORM_WIN32_KHR;NOMINMAX;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;VK_EXAMPLE_DATA_DIR="D:/PersonalProject/Vulka_PBR/data/";CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)Libraries\vulkan;$(ProjectDir)Libraries\tinygltf;$(ProjectDir)Libraries\imgui;$(ProjectDir)Libraries\glm;$(ProjectDir)Libraries\gli;$(ProjectDir)Libraries;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -137,27 +140,28 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Base\vulkan_example_base.cpp" />
-    <ClCompile Include="Base\vulkan_glTF_model_loader.cpp" />
     <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\pbr_renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Base\camera.h" />
-    <ClInclude Include="Base\keycodes.h" />
-    <ClInclude Include="Base\ui.h" />
-    <ClInclude Include="Base\vulkan_base.h" />
-    <ClInclude Include="Base\vulkan_device.h" />
-    <ClInclude Include="Base\vulkan_example_base.h" />
-    <ClInclude Include="Base\vulkan_glTF_model_loader.h" />
-    <ClInclude Include="Base\vulkan_swapchain.h" />
-    <ClInclude Include="Base\vulkan_texture.h" />
-    <ClInclude Include="Base\vulkan_uitls.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Source\pbr_renderer.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Vulkan_PBR.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\filtercube.vert" />
+    <None Include="Shaders\genbrdflut.frag" />
+    <None Include="Shaders\genbrdflut.vert" />
+    <None Include="Shaders\irradiancecube.frag" />
+    <None Include="Shaders\pbr.vert" />
+    <None Include="Shaders\pbr_khr.frag" />
+    <None Include="Shaders\prefilterenvmap.frag" />
+    <None Include="Shaders\skybox.frag" />
+    <None Include="Shaders\skybox.vert" />
+    <None Include="Shaders\ui.frag" />
+    <None Include="Shaders\ui.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

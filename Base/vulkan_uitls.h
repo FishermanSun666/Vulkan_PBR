@@ -75,7 +75,7 @@ struct Buffer
 	}
 };
 
-VkPipelineShaderStageCreateInfo loadShader(VkDevice device, std::string filename, VkShaderStageFlagBits stage)
+inline VkPipelineShaderStageCreateInfo loadShader(VkDevice device, std::string filename, VkShaderStageFlagBits stage)
 {
 	VkPipelineShaderStageCreateInfo stageCreateInfo{};
 	stageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -88,18 +88,18 @@ VkPipelineShaderStageCreateInfo loadShader(VkDevice device, std::string filename
 		throw std::runtime_error("fail to open file: " + filename);
 	}
 	size_t size = file.tellg();
-	if (size <= 0)
-	{
-		throw std::runtime_error("empty file: " + filename);
-	}
 	file.seekg(0, std::ios::beg);
 	char* codeBuffer = new char[size];
 	file.read(codeBuffer, size);
 	file.close();
-		
+	if (size <= 0)
+	{
+		throw std::runtime_error("empty file: " + filename);
+	}
 	VkShaderModuleCreateInfo moduleCreateInfo{};
 	moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 	moduleCreateInfo.codeSize = size;
+	moduleCreateInfo.pCode = (uint32_t*)codeBuffer;
 	VK_CHECK_RESULT(vkCreateShaderModule(device, &moduleCreateInfo, nullptr, &stageCreateInfo.module));
 		
 	delete[] codeBuffer;
@@ -107,7 +107,7 @@ VkPipelineShaderStageCreateInfo loadShader(VkDevice device, std::string filename
 	return stageCreateInfo;
 }
 
-void readDirectory(const std::string& directory, const std::string& pattern, std::map<std::string, std::string>& filelist, bool recursive)
+inline void readDirectory(const std::string& directory, const std::string& pattern, std::map<std::string, std::string>& filelist, bool recursive)
 {
 	std::string searchpattern(directory + "/" + pattern);
 	WIN32_FIND_DATA data;

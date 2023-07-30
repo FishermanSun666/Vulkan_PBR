@@ -248,7 +248,7 @@ void Renderer::loadAssets()
 	}
 	readDirectory(ENVIRONMENT_PATH, "*.ktx", environments, false);
 
-	textureSet.empty.loadFromFile(ASSETS_PATH + "Textures/empty.ktx", VK_FORMAT_R8G8B8A8_UNORM, device, queue);
+	textureSet.empty.loadFromFile(TEXTURE_PATH + "empty.ktx", VK_FORMAT_R8G8B8A8_UNORM, device, queue);
 
 	std::string sceneFile = MODEL_PATH + "DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf";
 	std::string envMapFile = ENVIRONMENT_PATH + "papermill.ktx";
@@ -1752,4 +1752,12 @@ void Renderer::render()
 	{
 		updateUniformBuffers();
 	}
+}
+
+void Renderer::fileDropped(std::string filename)
+{
+	vkDeviceWaitIdle(logicalDevice);
+	loadScene(filename);
+	setupDescriptors();
+	recordCommandBuffers();
 }

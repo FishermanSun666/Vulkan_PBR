@@ -23,12 +23,12 @@
 
 #define GLFW_INCLUDE_VULKAN
 
-const std::string SHADER_PATH = "../Shaders/";
-const std::string ASSETS_PATH = "../Assets";
-const std::string ENVIRONMENT_PATH = "../Assets/Environments/";
-const std::string MODEL_PATH = "../Assets/Models/";
-const std::string TEXTURE_PATH = "../Assets/Textures/";
-const std::string FONT_PATH = "../Assets/Fonts/";
+const std::string SHADER_PATH = "Shaders/";
+const std::string ASSETS_PATH = "Assets";
+const std::string ENVIRONMENT_PATH = "Assets/Environments/";
+const std::string MODEL_PATH = "Assets/Models/";
+const std::string TEXTURE_PATH = "Assets/Textures/";
+const std::string FONT_PATH = "Assets/Fonts/";
 
 #define VK_CHECK_RESULT(f)																				\
 {																										\
