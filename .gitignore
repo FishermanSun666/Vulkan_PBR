@@ -31,3 +31,17 @@
 *.out
 *.app
 /.vs/Vulkan_PBR
+/Base/x64/Debug
+/x64/Debug/Vulkan_PBR.vcxproj.FileListAbsolute.txt
+/x64/Debug/Vulkan_PBR.pdb
+*.ilk
+/x64/Debug/Vulkan_PBR.log
+*.log
+*.recipe
+/x64/Debug/vc143.pdb
+/x64/Debug/vc143.idb
+*.ini
+/x64/Debug/Vulkan_PBR.tlog/CL.command.1.tlog
+/x64/Debug/Vulkan_PBR.tlog/CL.read.1.tlog
+/x64/Debug/Vulkan_PBR.tlog/CL.write.1.tlog
+/x64/Debug/Vulkan_PBR.tlog/link.write.1.tlog
