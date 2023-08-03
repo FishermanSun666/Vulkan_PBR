@@ -254,7 +254,7 @@ namespace vulkan
 			imageCreateInfo.usage = imageUsageFlags;
 			device->createImage(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, deviceMemory);
 
-			VkImageSubresourceRange resourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, mipLevels, 0, 6 };
+			VkImageSubresourceRange resourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, mipLevels, 0, 1 };
 			// Use a separate command buffer for texture loading
 			VkCommandBuffer copyCmdBuffer = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 			device->beginCommandBuffer(copyCmdBuffer);
@@ -370,7 +370,7 @@ namespace vulkan
 
 			device->createImage(imageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, deviceMemory);
 
-			VkImageSubresourceRange resourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, mipLevels, 0, 1 };
+			VkImageSubresourceRange resourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, mipLevels, 0, 6 };
 			// Use a separate command buffer for texture loading
 			VkCommandBuffer copyCmdBuffer = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 			device->beginCommandBuffer(copyCmdBuffer);

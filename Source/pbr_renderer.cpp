@@ -251,7 +251,7 @@ void Renderer::loadAssets()
 	textureSet.empty.loadFromFile(TEXTURE_PATH + "empty.ktx", VK_FORMAT_R8G8B8A8_UNORM, device, queue);
 
 	std::string sceneFile = MODEL_PATH + "DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf";
-	std::string envMapFile = ENVIRONMENT_PATH + "papermill.ktx";
+	std::string envMapFile = ENVIRONMENT_PATH + "cyberpunk.ktx";
 	for (size_t i = 0; i < args.size(); i++)
 	{
 		if ((std::string(args[i]).find(".gltf") != std::string::npos) || (std::string(args[i]).find(".glb") != std::string::npos))
@@ -585,7 +585,7 @@ void Renderer::generateCubemaps()
 
 		cubemap.device = device;
 
-		auto startTm = std::chrono::high_resolution_clock::now();
+		auto tStart = std::chrono::high_resolution_clock::now();
 
 		VkFormat format;
 		int32_t dim;
@@ -885,7 +885,6 @@ void Renderer::generateCubemaps()
 		renderPassBeginInfo.pClearValues = clearValues;
 
 		VkCommandBuffer cmdBuf = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-		device->beginCommandBuffer(cmdBuf);
 
 		VkViewport viewport{};
 		viewport.width = (float)dim;
@@ -1003,8 +1002,8 @@ void Renderer::generateCubemaps()
 			break;
 		};
 
-		auto endTm = std::chrono::high_resolution_clock::now();
-		auto tDiff = std::chrono::duration<double, std::milli>(endTm - startTm).count();
+		auto tEnd = std::chrono::high_resolution_clock::now();
+		auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
 		std::cout << "Generating cube map with " << numMips << " mip levels took " << tDiff << " ms" << std::endl;
 	}
 }
@@ -1060,10 +1059,7 @@ void Renderer::setupDescriptors()
 	descriptorPoolCI.maxSets = (2 + materialCount + meshCount) * swapchain.imageCount;
 	VK_CHECK_RESULT(vkCreateDescriptorPool(logicalDevice, &descriptorPoolCI, nullptr, &descriptorPool));
 
-	/*
-		Descriptor sets
-	*/
-
+	//Descriptor sets
 	// Scene (matrices and environment maps)
 	{
 		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
@@ -1498,12 +1494,11 @@ void Renderer::updateOverlay()
 
 	ImGui::NewFrame();
 
-	ImGui::SetNextWindowPos(ImVec2(10, 10));
-	ImGui::SetNextWindowSize(ImVec2(200 * scale, (modelSet.scene.animations.size() > 0 ? 440 : 360) * scale), ImGuiSetCond_Always);
-	ImGui::Begin("Vulkan glTF 2.0 PBR", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+	ImGui::SetNextWindowPos(ImVec2(width - 400, 10));
+	ImGui::SetNextWindowSize(ImVec2(300 * scale, (modelSet.scene.animations.size() > 0 ? 440 : 360) * scale), ImGuiSetCond_Always);
+	ImGui::Begin("Vulkan PBR", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 	ImGui::PushItemWidth(100.0f * scale);
 
-	ui->text("www.saschawillems.de");
 	ui->text("%.1d fps (%.2f ms)", lastFPS, (1000.0f / lastFPS));
 
 	if (ui->header("Scene"))

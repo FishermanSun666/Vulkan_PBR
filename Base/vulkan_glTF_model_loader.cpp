@@ -965,7 +965,7 @@ namespace vkglTF
 						break;
 					}
 					default: {
-						std::cout << "unknown type" << std::endl;
+						std::cout << "unknown type: " << accessor.type << std::endl;
 						break;
 					}
 					}
