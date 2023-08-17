@@ -6,6 +6,10 @@ This project is a physically-based rendering (PBR) renderer implemented using Vu
 
 ![environment_test](https://github.com/FishermanSun666/Vulkan_PBR/blob/master/ScreenShoot/environment_test.png)
 
+## Video link
+
+https://youtu.be/aSoyZY3B76w
+
 ## Key Features
 
 - [x] Loading glTF 2.0 models
