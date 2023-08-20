@@ -47,7 +47,7 @@ public:
 		glm::vec3 camPos;
 	} sceneUBO, skyboxUBO;
 
-	struct shaderValuesParams
+	struct ShaderValuesParams
 	{
 		glm::vec4 lightDir;
 		float exposure = 4.5f;

@@ -1,6 +1,5 @@
 // PBR shader based on the Khronos WebGL PBR implementation
 // See https://github.com/KhronosGroup/glTF-WebGL-PBR
-// Supports both metallic roughness and specular glossiness inputs
 
 #version 450
 
@@ -61,8 +60,6 @@ layout (push_constant) uniform Material {
 layout (location = 0) out vec4 outColor;
 
 // Encapsulate the various inputs used by the various functions in the shading equation
-// We store values in this struct to simplify the integration of alternative implementations
-// of the shading terms, outlined in the Readme.MD Appendix.
 struct PBRInfo
 {
 	float NdotL;                  // cos angle between normal and light direction
@@ -122,7 +119,6 @@ vec4 SRGBtoLINEAR(vec4 srgbIn)
 }
 
 // Find the normal for this fragment, pulling either from a predefined normal map
-// or from the interpolated mesh normal and tangent attributes.
 vec3 getNormal()
 {
 	// Perturb normal, see http://www.thetenthplanet.de/archives/1180
@@ -142,8 +138,6 @@ vec3 getNormal()
 }
 
 // Calculation of the lighting contribution from an optional Image Based Light source.
-// Precomputed Environment Maps are required uniform inputs and are computed as outlined in [1].
-// See our README.md on Environment Maps [3] for additional discussion.
 vec3 getIBLContribution(PBRInfo pbrInputs, vec3 n, vec3 reflection)
 {
 	float lod = (pbrInputs.perceptualRoughness * uboParams.prefilteredCubeMipLevels);
@@ -165,24 +159,18 @@ vec3 getIBLContribution(PBRInfo pbrInputs, vec3 n, vec3 reflection)
 }
 
 // Basic Lambertian diffuse
-// Implementation from Lambert's Photometria https://archive.org/details/lambertsphotome00lambgoog
-// See also [1], Equation 1
 vec3 diffuse(PBRInfo pbrInputs)
 {
 	return pbrInputs.diffuseColor / M_PI;
 }
 
 // The following equation models the Fresnel reflectance term of the spec equation (aka F())
-// Implementation of fresnel from [4], Equation 15
 vec3 specularReflection(PBRInfo pbrInputs)
 {
 	return pbrInputs.reflectance0 + (pbrInputs.reflectance90 - pbrInputs.reflectance0) * pow(clamp(1.0 - pbrInputs.VdotH, 0.0, 1.0), 5.0);
 }
 
 // This calculates the specular geometric attenuation (aka G()),
-// where rougher material will reflect less light back to the viewer.
-// This implementation is based on [1] Equation 4, and we adopt their modifications to
-// alphaRoughness as input as originally proposed in [2].
 float geometricOcclusion(PBRInfo pbrInputs)
 {
 	float NdotL = pbrInputs.NdotL;
@@ -195,8 +183,6 @@ float geometricOcclusion(PBRInfo pbrInputs)
 }
 
 // The following equation(s) model the distribution of microfacet normals across the area being drawn (aka D())
-// Implementation from "Average Irregularity Representation of a Roughened Surface for Ray Reflection" by T. S. Trowbridge, and K. P. Reitz
-// Follows the distribution function recommended in the SIGGRAPH 2013 course notes from EPIC Games [1], Equation 3.
 float microfacetDistribution(PBRInfo pbrInputs)
 {
 	float roughnessSq = pbrInputs.alphaRoughness * pbrInputs.alphaRoughness;
@@ -288,80 +274,120 @@ void main()
 		baseColor = vec4(mix(baseColorDiffusePart, baseColorSpecularPart, metallic * metallic), diffuse.a);
 
 	}
-
 	baseColor *= inColor0;
 
-	diffuseColor = baseColor.rgb * (vec3(1.0) - f0);
-	diffuseColor *= 1.0 - metallic;
-		
-	float alphaRoughness = perceptualRoughness * perceptualRoughness;
-
-	vec3 specularColor = mix(f0, baseColor.rgb, metallic);
-
-	// Compute reflectance.
-	float reflectance = max(max(specularColor.r, specularColor.g), specularColor.b);
-
-	// For typical incident reflectance range (between 4% to 100%) set the grazing reflectance to 100% for typical fresnel effect.
-	// For very low reflectance range on highly diffuse objects (below 4%), incrementally reduce grazing reflecance to 0%.
-	float reflectance90 = clamp(reflectance * 25.0, 0.0, 1.0);
-	vec3 specularEnvironmentR0 = specularColor.rgb;
-	vec3 specularEnvironmentR90 = vec3(1.0, 1.0, 1.0) * reflectance90;
-
-	vec3 n = (material.normalTextureSet > -1) ? getNormal() : normalize(inNormal);
-	vec3 v = normalize(ubo.camPos - inWorldPos);    // Vector from surface point to camera
-	vec3 l = normalize(uboParams.lightDir.xyz);     // Vector from surface point to light
-	vec3 h = normalize(l+v);                        // Half vector between both l and v
-	vec3 reflection = -normalize(reflect(v, n));
-	reflection.y *= -1.0f;
-
-	float NdotL = clamp(dot(n, l), 0.001, 1.0);
-	float NdotV = clamp(abs(dot(n, v)), 0.001, 1.0);
-	float NdotH = clamp(dot(n, h), 0.0, 1.0);
-	float LdotH = clamp(dot(l, h), 0.0, 1.0);
-	float VdotH = clamp(dot(v, h), 0.0, 1.0);
-
-	PBRInfo pbrInputs = PBRInfo(
-		NdotL,
-		NdotV,
-		NdotH,
-		LdotH,
-		VdotH,
-		perceptualRoughness,
-		metallic,
-		specularEnvironmentR0,
-		specularEnvironmentR90,
-		alphaRoughness,
-		diffuseColor,
-		specularColor
-	);
-
-	// Calculate the shading terms for the microfacet specular shading model
-	vec3 F = specularReflection(pbrInputs);
-	float G = geometricOcclusion(pbrInputs);
-	float D = microfacetDistribution(pbrInputs);
-
+	vec3 color = baseColor.rgb;
+	//Lambertian
 	const vec3 u_LightColor = vec3(1.0);
+	vec3 n = (material.normalTextureSet > -1) ? getNormal() : normalize(inNormal);
+	vec3 l = normalize(uboParams.lightDir.xyz);
+	float NdotL = clamp(dot(n, l), 0.001, 1.0);
+	if(1 == int(uboParams.debugViewInputs)) {
+		vec3 diffuse = baseColor.rgb * NdotL;
+		//Blinn-Phong
+		vec3 v = normalize(ubo.camPos - inWorldPos); // observation vector
+		vec3 h = normalize(l + v); //semi-vector
+		float NdotH = max(dot(n, h), 0.0);
+		
+		vec3 specular = pow(NdotH, 100.0f) * u_LightColor;
+		//switch on/off PBR
+		color = diffuse + specular;
+		const float u_EmissiveFactor = 1.0f;
 
-	// Calculation of analytical lighting contribution
-	vec3 diffuseContrib = (1.0 - F) * diffuse(pbrInputs);
-	vec3 specContrib = F * G * D / (4.0 * NdotL * NdotV);
-	// Obtain final intensity as reflectance (BRDF) scaled by the energy of the light (cosine law)
-	vec3 color = NdotL * u_LightColor * (diffuseContrib + specContrib);
+		if (material.emissiveTextureSet > -1) {
+			vec3 emissive = SRGBtoLINEAR(texture(emissiveMap, material.emissiveTextureSet == 0 ? inUV0 : inUV1)).rgb * u_EmissiveFactor;
+			color += emissive;
+		}
+	} else {
+		diffuseColor = baseColor.rgb * (vec3(1.0) - f0);
+		diffuseColor *= 1.0 - metallic;
+		
+		float alphaRoughness = perceptualRoughness * perceptualRoughness;
 
-	// Calculate lighting contribution from image based lighting source (IBL)
-	color += getIBLContribution(pbrInputs, n, reflection);
+		vec3 specularColor = mix(f0, baseColor.rgb, metallic);
 
-	const float u_OcclusionStrength = 1.0f;
-	// Apply optional PBR terms for additional (optional) shading
-	if (material.occlusionTextureSet > -1) {
-		float ao = texture(aoMap, (material.occlusionTextureSet == 0 ? inUV0 : inUV1)).r;
-		color = mix(color, color * ao, u_OcclusionStrength);
-	}
+		// Compute reflectance.
+		float reflectance = max(max(specularColor.r, specularColor.g), specularColor.b);
 
-	const float u_EmissiveFactor = 1.0f;
-	if (material.emissiveTextureSet > -1) {
-		vec3 emissive = SRGBtoLINEAR(texture(emissiveMap, material.emissiveTextureSet == 0 ? inUV0 : inUV1)).rgb * u_EmissiveFactor;
-		color += emissive;
+		// For typical incident reflectance range (between 4% to 100%) set the grazing reflectance to 100% for typical fresnel effect.
+		// For very low reflectance range on highly diffuse objects (below 4%), incrementally reduce grazing reflecance to 0%.
+		float reflectance90 = clamp(reflectance * 25.0, 0.0, 1.0);
+		vec3 specularEnvironmentR0 = specularColor.rgb;
+		vec3 specularEnvironmentR90 = vec3(1.0, 1.0, 1.0) * reflectance90;
+
+		vec3 v = normalize(ubo.camPos - inWorldPos);    // Vector from surface point to camera
+		vec3 h = normalize(l+v);                        // Half vector between both l and v
+		vec3 reflection = -normalize(reflect(v, n));
+		reflection.y *= -1.0f;
+		
+		float NdotV = clamp(abs(dot(n, v)), 0.001, 1.0);
+		float NdotH = clamp(dot(n, h), 0.0, 1.0);
+		float LdotH = clamp(dot(l, h), 0.0, 1.0);
+		float VdotH = clamp(dot(v, h), 0.0, 1.0);
+
+		PBRInfo pbrInputs = PBRInfo(
+			NdotL,
+			NdotV,
+			NdotH,
+			LdotH,
+			VdotH,
+			perceptualRoughness,
+			metallic,
+			specularEnvironmentR0,
+			specularEnvironmentR90,
+			alphaRoughness,
+			diffuseColor,
+			specularColor
+		);
+
+		// Calculate the shading terms for the microfacet specular shading model
+		vec3 F = specularReflection(pbrInputs);
+		float G = geometricOcclusion(pbrInputs);
+		float D = microfacetDistribution(pbrInputs);
+
+		// Calculation of analytical lighting contribution
+		vec3 diffuseContrib = (1.0 - F) * diffuse(pbrInputs);
+		vec3 specContrib = F * G * D / (4.0 * NdotL * NdotV);
+		// Obtain final intensity as reflectance (BRDF) scaled by the energy of the light (cosine law)
+		color = NdotL * u_LightColor * (diffuseContrib + specContrib);
+		// Calculate lighting contribution from image based lighting source (IBL)
+		if (0.01f < uboParams.scaleIBLAmbient) {
+			color += getIBLContribution(pbrInputs, n, reflection);
+		}
+		const float u_OcclusionStrength = 1.0f;
+		// Apply optional PBR terms for additional (optional) shading
+		if (material.occlusionTextureSet > -1) {
+			float ao = texture(aoMap, (material.occlusionTextureSet == 0 ? inUV0 : inUV1)).r;
+			color = mix(color, color * ao, u_OcclusionStrength);
+		}
+		const float u_EmissiveFactor = 1.0f;
+		if (material.emissiveTextureSet > -1) {
+			vec3 emissive = SRGBtoLINEAR(texture(emissiveMap, material.emissiveTextureSet == 0 ? inUV0 : inUV1)).rgb * u_EmissiveFactor;
+			color += emissive;
+		}
+
+		// PBR equation debug visualization
+		// "none", "Diff (l,n)", "F (l,h)", "G (l,v,h)", "D (h)", "Specular"
+		if (uboParams.debugViewEquation > 0.0) {
+		int index = int(uboParams.debugViewEquation);
+		switch (index) {
+			case 1:
+				color.rgb = diffuseContrib;
+				break;
+			case 2:
+				color.rgb = F;
+				break;
+			case 3:
+				color.rgb = vec3(G);
+				break;
+			case 4: 
+				color.rgb = vec3(D);
+				break;
+			case 5:
+				color.rgb = specContrib;
+				break;				
+		}
+		}
 	}
 	
 	outColor = vec4(color, baseColor.a);
@@ -370,9 +396,6 @@ void main()
 	if (uboParams.debugViewInputs > 0.0) {
 		int index = int(uboParams.debugViewInputs);
 		switch (index) {
-			case 1:
-				outColor.rgba = material.baseColorTextureSet > -1 ? texture(colorMap, material.baseColorTextureSet == 0 ? inUV0 : inUV1) : vec4(1.0f);
-				break;
 			case 2:
 				outColor.rgb = (material.normalTextureSet > -1) ? texture(normalMap, material.normalTextureSet == 0 ? inUV0 : inUV1).rgb : normalize(inNormal);
 				break;
@@ -391,28 +414,4 @@ void main()
 		}
 		outColor = SRGBtoLINEAR(outColor);
 	}
-
-	// PBR equation debug visualization
-	// "none", "Diff (l,n)", "F (l,h)", "G (l,v,h)", "D (h)", "Specular"
-	if (uboParams.debugViewEquation > 0.0) {
-		int index = int(uboParams.debugViewEquation);
-		switch (index) {
-			case 1:
-				outColor.rgb = diffuseContrib;
-				break;
-			case 2:
-				outColor.rgb = F;
-				break;
-			case 3:
-				outColor.rgb = vec3(G);
-				break;
-			case 4: 
-				outColor.rgb = vec3(D);
-				break;
-			case 5:
-				outColor.rgb = specContrib;
-				break;				
-		}
-	}
-
 }

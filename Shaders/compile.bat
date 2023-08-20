@@ -1,1 +1,1 @@
-D:/VulkanSDK/Bin/glslc.exe ./skybox.frag -o skybox.frag.spv
+D:/VulkanSDK/Bin/glslc.exe ./pbr_khr.frag -o pbr_khr.frag.spv
