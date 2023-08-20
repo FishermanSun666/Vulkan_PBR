@@ -4,7 +4,11 @@
 
 This project is a physically-based rendering (PBR) renderer implemented using Vulkan(1.3), a low-level graphics API. The PBR technique aims to achieve realistic lighting and material representation in computer graphics. With Vulkan's high performance and efficiency, this renderer delivers stunning visuals and optimal performance.
 
-![environment_test](D:\PersonalProject\Vulkan_PBR\ScreenShoot\environment_test.png)
+![environment_test](https://github.com/FishermanSun666/Vulkan_PBR/blob/master/ScreenShoot/environment_test.png)
+
+## Video link
+
+https://youtu.be/aSoyZY3B76w
 
 ## Key Features
 
@@ -15,13 +19,13 @@ This project is a physically-based rendering (PBR) renderer implemented using Vu
     - [x] Metallic-Roughness
     - [x] Specular-Glossiness workflow
 
-  <img src="D:\PersonalProject\Vulkan_PBR\ScreenShoot\boombox.png" alt="boombox" style="zoom:23%;" />
+  <img src="https://github.com/FishermanSun666/Vulkan_PBR/blob/master/ScreenShoot/boombox.png" alt="boombox" style="zoom:23%;" />
 
   - [x] Animations
     - [x] Articulated (translate, rotate, scale)
     - [x] Skinned
 
-  ![animation](D:\PersonalProject\Vulkan_PBR\ScreenShoot\animation.gif)
+  ![animation](https://github.com/FishermanSun666/Vulkan_PBR/blob/master/ScreenShoot/animation.gif)
 
 - [x] PBR
 
