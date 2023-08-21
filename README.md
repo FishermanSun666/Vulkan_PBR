@@ -17,9 +17,9 @@ In terms of PBR (Physically Based Rendering) implementation, this solution prima
 ### Diffuse BRDF
 
 For the Diffuse BRDF, I opted for the Lambertian Diffuse. When juxtaposed with models like Burley's diffuse, the visual differences are subtle, yet the computational overhead is substantially reduced.
-$$
+```math
 f(l,v) = \frac{{C}_{diff}}{\pi}
-$$
+```
 
 ### Cook-Torrance BRDF
 
