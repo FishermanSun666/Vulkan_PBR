@@ -126,15 +126,17 @@ void main()
 ### Offline Rendering
 
 Drawing from prevalent practices in the gaming industry, a Split Sum Approximation approach is employed. Here, the formula
-$\int_{\Omega}{L}_{i}(l)f(l,v)\cos{{\theta}_{l}\cdot dl \approx \frac{1}{N}\sum_{k=1}^{N}\frac{{L}_{i}({l}_{k})f({l}_{k},v)\cos{{\theta}_{{l}_{k}}}}{p({l}_{k},v)}}$
+```math
+\int_{\Omega}{L}_{i}(l)f(l,v)\cos{{\theta}_{l}\cdot dl \approx \frac{1}{N}\sum_{k=1}^{N}\frac{{L}_{i}({l}_{k})f({l}_{k},v)\cos{{\theta}_{{l}_{k}}}}{p({l}_{k},v)}}
+```
 is divided into two constituent formulas, one representing the mean luminance 
-$$
+```math
 \frac{1}{N}\sum_{k=1}^{N}{L}_{i}({l}_{k})
-$$
+```
 and the other representing the Environmental BRDF
-$$
+```math
 \frac{1}{N}\sum_{k=1}^{N}\frac{f({l}_{k},v)\cos{{\theta}_{{l}_{k}}}}{p({l}_{k},v)}
-$$
+```
 Once the split is accomplished, offline pre-computation is performed individually for both components to align with the rendering results of the offline rendering reference value.
 
 ### Pre-filtered environment map
