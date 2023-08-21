@@ -1535,10 +1535,6 @@ void Renderer::updateOverlay()
 		{
 			updateShaderParams = true;
 		}
-	}
-
-	if (ui->header("Environment"))
-	{
 		if (ui->combo("Environment", selectedEnvironment, environments))
 		{
 			vkDeviceWaitIdle(logicalDevice);
@@ -1546,7 +1542,10 @@ void Renderer::updateOverlay()
 			setupDescriptors();
 			updateCBs = true;
 		}
+	}
 
+	if (ui->header("Environment"))
+	{
 		if (ui->checkbox("Background", &displayBackground))
 		{
 			updateShaderParams = true;
