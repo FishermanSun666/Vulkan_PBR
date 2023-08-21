@@ -17,23 +17,22 @@ In terms of PBR (Physically Based Rendering) implementation, this solution prima
 ### Diffuse BRDF
 
 For the Diffuse BRDF, I opted for the Lambertian Diffuse. When juxtaposed with models like Burley's diffuse, the visual differences are subtle, yet the computational overhead is substantially reduced.
-$$
+```math
 f(l,v) = \frac{{C}_{diff}}{\pi}
-$$
+```
 
 ### Cook-Torrance BRDF
 
 In the realm of BRDF models, I have chosen the Cook-Torrance BRDF. This model is the most commonly employed in practice. It models the scattering from a single layer of microsurfaces in a geometric optical system, neglecting considerations of multiple scatterings, layered materials, and diffraction. Let's delve into the holistic representation of this formula:
-$$
-{L}_{0}(p, {\omega}_{0}) = \int^{}_{\Omega}{{k}_{d}\frac{c}{\pi}+\frac{DFG}{4({\omega}_{0}\cdot n)({\omega}_{i}\cdot n)(p,{\omega}_{i})n\cdot {\omega}_{i}d{\omega}_{i}}}
-$$
-
+```math
+{L}_{0}(p,{\omega}_{0})=\int^{}_{\Omega}{{k}_{d}\frac{c}{\pi}+\frac{DFG}{4({\omega}_{0}\cdot n)({\omega}_{i}\cdot n)(p,{\omega}_{i})n\cdot{\omega}_{i}d{\omega}_{i}}}
+```
 #### Specular D
 
 For the normal distribution function, the choice was the GGX / Trowbridge-Reitz, as adopted by Disney. Compared to the Blinn-Phong, the GGX more accurately simulates surfaces with high roughness. It offers stable specular highlights across various roughness levels, and the additional computational cost is relatively insignificant. Currently, GGX has become the preferred choice in many game engines, renderers, and film production tools. Let's delve into the formula for this:
-$$
+```math
 f(l,v)=\frac{a^2}{\pi(n\cdot h)^2(a^2 -1)^2}
-$$
+```
 Code:
 
 ```c++
@@ -48,13 +47,13 @@ float microfacetDistribution(PBRInfo pbrInputs)
 #### Specular G
 
 For the specular geometric attenuation, I opted for the Smith geometric attenuation function tailored for the GGX distribution. This choice was informed by the particular effectiveness of Smith-GGX at high roughness levels, as it can produce broad specular tails, immensely beneficial when visualizing rough materials. Across varying degrees of roughness, the GGX consistently offers stable highlights. The geometric occlusion function for Smith-GGX is:
-$$
+```math
 G(v,l,a) = {G}_{1}(v\cdot a)\cdot {G}_{1}(l,a)
-$$
+```
 Here, G1 is the one-directional occlusion function. For the GGX distribution, its form is:
-$$
+```math
 {G}_{1}(v,a) = \frac{2(n\cdot v)}{(n\cdot v)+\sqrt{a^2 + (1-a^2)(n\cdot v)^2}}
-$$
+```
 Code:
 
 ```glsl
@@ -73,9 +72,9 @@ float geometricOcclusion(PBRInfo pbrInputs)
 #### Specular F
 
 For the Fresnel component, I, along with UE4, have opted to use Schlick's Fresnel approximation. This function serves as a simplified equation, making it especially efficient for real-time rendering and is a pivotal consideration in terms of performance. Despite its simplification, the Schlick approximation yields results akin to other Fresnel equations across the majority of commonly observed angles. This positions the equation as an optimal choice for this solution. The formula itself is also quite straightforward:
-$$
+```math
 F(\theta) = {F}_{0} + (1-{F}_{0})(1-\cos{\theta})^5
-$$
+```
 Code:
 
 ```glsl
@@ -92,9 +91,9 @@ Moving on to the lighting component, the foundational principles behind Lamberti
 ### Irradiance Environment Mapping
 
 For the diffuse environmental lighting component, I opted for the traditional Irradiance Environment Mapping technique. This technique computes the irradiance for the diffuse portion of an object. While it's not exclusive to physically based rendering, it proves instrumental for diffuse illumination in PBR, given its capability to swiftly estimate the impact of environmental light on an object. First, let's look at the foundational equation:
-$$
+```math
 E(n)=\int^{}_{\omega \in hemishphere}{L(\omega)\cdot \cos{\theta}\cdot\sin{\theta}\cdot d\omega}
-$$
+```
 Code:
 
 ```glsl
@@ -127,17 +126,17 @@ void main()
 ### Offline Rendering
 
 Drawing from prevalent practices in the gaming industry, a Split Sum Approximation approach is employed. Here, the formula
-$$
+```math
 \int_{\Omega}{L}_{i}(l)f(l,v)\cos{{\theta}_{l}\cdot dl \approx \frac{1}{N}\sum_{k=1}^{N}\frac{{L}_{i}({l}_{k})f({l}_{k},v)\cos{{\theta}_{{l}_{k}}}}{p({l}_{k},v)}}
-$$
+```
 is divided into two constituent formulas, one representing the mean luminance 
-$$
+```math
 \frac{1}{N}\sum_{k=1}^{N}{L}_{i}({l}_{k})
-$$
+```
 and the other representing the Environmental BRDF
-$$
+```math
 \frac{1}{N}\sum_{k=1}^{N}\frac{f({l}_{k},v)\cos{{\theta}_{{l}_{k}}}}{p({l}_{k},v)}
-$$
+```
 Once the split is accomplished, offline pre-computation is performed individually for both components to align with the rendering results of the offline rendering reference value.
 
 ### Pre-filtered environment map
@@ -171,19 +170,14 @@ For this solution, we've opted to follow the methodology presented by UE4, which
     - [x] Metallic-Roughness
     - [x] Specular-Glossiness workflow
 
-  <img src="https://github.com/FishermanSun666/Vulkan_PBR/blob/master/ScreenShoot/boombox.png" alt="boombox" style="zoom:23%;" />
-
   - [x] Animations
     - [x] Articulated (translate, rotate, scale)
     - [x] Skinned
-
-  ![animation](https://github.com/FishermanSun666/Vulkan_PBR/blob/master/ScreenShoot/animation.gif)
 
 - [x] PBR
 
   - [x] Metallic-Roughness workflow
   - [x] Specular-Glossiness workflow
-
 
 - [x] Environment Lighting
   - [x] Diffuse
