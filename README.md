@@ -12,18 +12,18 @@ https://youtu.be/aSoyZY3B76w
 
 ## PBR
 
-在实现PBR方面，本解决方案主要参考UE4在2013年发表的[Real Shading in Unreal Engine 4]的实现方案。选择这个方案主要是因为它是基于Cook-Torrance BRDF这一经典的基于为表面理论的模型实现的个模型目前已经被广泛接受并且运用于许多现代的渲染器和引擎中。
+In terms of PBR (Physically Based Rendering) implementation, this solution primarily draws inspiration from the approach presented in [Real Shading in Unreal Engine 4], published by UE4 in 2013. The choice of this methodology stems from its foundation on the Cook-Torrance BRDF, a classic model rooted in surface theory. This model has garnered widespread acceptance and has been integrated into numerous contemporary rendering engines and platforms.
 
 ### Diffuse BRDF
 
-在Diffuse BRDF方面，我选择使用Lambertian Diffuse。该公式与Burley’s diffuse model这样的模型相比，在显示效果的方面，只有轻微的差异，而计算量大大减少。
+For the Diffuse BRDF, I opted for the Lambertian Diffuse. When juxtaposed with models like Burley's diffuse, the visual differences are subtle, yet the computational overhead is substantially reduced.
 $$
 f(l,v) = \frac{{C}_{diff}}{\pi}
 $$
 
 ### Cook-Torrance BRDF
 
-在BRDF模型这块我选择Cook-Torrance BRDF，这是实践中使用最广泛的模型，它仅对几何光学系统中的单层微表面上的单个散射进行建模，没有考虑多次散射，分层材质，以及衍射。展示一下该公式的一个整体：
+In the realm of BRDF models, I have chosen the Cook-Torrance BRDF. This model is the most commonly employed in practice. It models the scattering from a single layer of microsurfaces in a geometric optical system, neglecting considerations of multiple scatterings, layered materials, and diffraction. Let's delve into the holistic representation of this formula:
 $$
 {L}_{0}(p, {\omega}_{0}) = \int^{}_{\Omega}{{k}_{d}\frac{c}{\pi}+\frac{DFG}{4({\omega}_{0}\cdot n)({\omega}_{i}\cdot n)(p,{\omega}_{i})n\cdot {\omega}_{i}d{\omega}_{i}}}
 $$
@@ -72,7 +72,7 @@ float geometricOcclusion(PBRInfo pbrInputs)
 
 #### Specular F
 
-对于Fresnel，我和UE4一样选择使用Schlick的Fresnel近似。这个函数是一个简化公式，对于实时渲染来说非常的高效，也是作为性能的关键考虑因素。而尽管这是一个简化的公式，Shlick近似在大多数常见的观察角度下都能产生和其他Fresnel方程相似的结果，这使得这个公式对于这个解决方案来说是最优选。这个公式也非常的简单：
+For the Fresnel component, I, along with UE4, have opted to use Schlick's Fresnel approximation. This function serves as a simplified equation, making it especially efficient for real-time rendering and is a pivotal consideration in terms of performance. Despite its simplification, the Schlick approximation yields results akin to other Fresnel equations across the majority of commonly observed angles. This positions the equation as an optimal choice for this solution. The formula itself is also quite straightforward:
 $$
 F(\theta) = {F}_{0} + (1-{F}_{0})(1-\cos{\theta})^5
 $$
@@ -87,7 +87,7 @@ vec3 specularReflection(PBRInfo pbrInputs)
 
 ## Environment Lighting
 
-接下来是光照的部分，对于基础的Lambertian 反射和Blinn-Phong 反射的实现原理，我相信已经众所周知了，我不过多赘述。主要还是IBL的部分，实现总共分为几个部分：漫反射环境光照、重要性采样，预处理环境贴图，环境BRDF。
+Moving on to the lighting component, the foundational principles behind Lambertian Reflection and Blinn-Phong Reflection are, I believe, well-understood, so I won't delve too deeply into them. The primary focus here is on Image-Based Lighting (IBL). The implementation is divided into several segments: Diffuse Environmental Lighting, Importance Sampling, Pre-processing of the Environment Map, and Environmental BRDF.
 
 ### Irradiance Environment Mapping
 
@@ -126,25 +126,23 @@ void main()
 
 ### Offline Rendering
 
-参考目前游戏业界主流的做法是，基于Split Sum Approximation的思路，将公式 
+Drawing from prevalent practices in the gaming industry, a Split Sum Approximation approach is employed. Here, the formula
 $$
 \int_{\Omega}{L}_{i}(l)f(l,v)\cos{{\theta}_{l}\cdot dl \approx \frac{1}{N}\sum_{k=1}^{N}\frac{{L}_{i}({l}_{k})f({l}_{k},v)\cos{{\theta}_{{l}_{k}}}}{p({l}_{k},v)}}
 $$
-拆分为光亮度的均值
+is divided into two constituent formulas, one representing the mean luminance 
 $$
 \frac{1}{N}\sum_{k=1}^{N}{L}_{i}({l}_{k})
 $$
-和环境BRDF的
+and the other representing the Environmental BRDF
 $$
 \frac{1}{N}\sum_{k=1}^{N}\frac{f({l}_{k},v)\cos{{\theta}_{{l}_{k}}}}{p({l}_{k},v)}
 $$
-两项公式。
-
-完成拆分之后，分别对两项进行离线预计算，去匹配离线渲染参考值的渲染结果。
+Once the split is accomplished, offline pre-computation is performed individually for both components to align with the rendering results of the offline rendering reference value.
 
 ### Pre-filtered environment map
 
-首先是第一项的实现，该公式可以被理解为对Li(lk)求均值。经过n = v = r 的假设，仅取决于表面的粗糙度和反射向量。这一项业界的做法比较统一（包括UE4和COD：Black Ops2等）。采用的方案主要借助通过预过滤环境贴图，然后用多级模糊的mipmap来存储模糊的环境高光。
+Let's first delve into the implementation of the first component. This formula can be conceptualized as obtaining the mean of L~i~(l~k~). Based on the assumption *n*=*v*=*r*, it is contingent solely on the surface roughness and reflection vector. The industry standard for implementing this component is quite uniform, evident in platforms such as UE4 and COD: Black Ops 2. The strategy primarily leans on pre-filtering the environment map and subsequently leveraging multi-level blurring mipmaps to store the blurred environmental highlights.
 
 ![tex_prefiltered_cube_mipchain_0](https://github.com/FishermanSun666/Vulkan_PBR/blob/master/ScreenShoot/tex_prefiltered_cube_mipchain_0.png)
 
@@ -158,11 +156,11 @@ $$
 
 ### Environment BRDF
 
-第二项也就是镜面反射项的半球方向反射率（hemispherical-directional reflectance），可以理解为环境BRDF。其取决于仰角θ，粗糙度α和Fresnel项F。本解决方案选择参考UE4的做法，生成一个BRDFLUT。
+The second component pertains to the hemispherical-directional reflectance of the specular reflection term, which can be understood as the Environmental Bidirectional Reflectance Distribution Function (BRDF). This is influenced by the zenith angle *θ*, roughness *α*, and the Fresnel term *F*.
 
 ![BRDFLUT](https://github.com/FishermanSun666/Vulkan_PBR/blob/master/ScreenShoot/BRDFLUT.png)
 
-这是关于roughness、cosθ与环境BRDF镜面反射强度的固有映射关系。可以离线预计算。
+For this solution, we've opted to follow the methodology presented by UE4, which entails generating a BRDF Look-Up Texture (LUT). This LUT represents an intrinsic mapping relationship between roughness, cos*θ*, and the intensity of environmental BRDF specular reflection. This relationship can be pre-computed offline, allowing for efficient real-time lookups during rendering.
 
 ## Key Features
 
