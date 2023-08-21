@@ -12,7 +12,6 @@ layout(push_constant) uniform PushConsts {
 
 const float PI = 3.1415926536;
 
-// Based omn http://byteblacksmith.com/improvements-to-the-canonical-one-liner-glsl-rand-for-opengl-es-2-0/
 float random(vec2 co)
 {
 	float a = 12.9898;
@@ -25,7 +24,6 @@ float random(vec2 co)
 
 vec2 hammersley2d(uint i, uint N) 
 {
-	// Radical inverse based on http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
 	uint bits = (i << 16u) | (i >> 16u);
 	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
 	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
@@ -35,7 +33,6 @@ vec2 hammersley2d(uint i, uint N)
 	return vec2(float(i) /float(N), rdi);
 }
 
-// Based on http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_slides.pdf
 vec3 importanceSample_GGX(vec2 Xi, float roughness, vec3 normal) 
 {
 	// Maps a 2D point to a hemisphere with spread based on roughness
@@ -76,7 +73,6 @@ vec3 prefilterEnvMap(vec3 R, float roughness)
 		vec3 L = 2.0 * dot(V, H) * H - V;
 		float dotNL = clamp(dot(N, L), 0.0, 1.0);
 		if(dotNL > 0.0) {
-			// Filtering based on https://placeholderart.wordpress.com/2015/07/28/implementation-notes-runtime-environment-map-filtering-for-image-based-lighting/
 
 			float dotNH = clamp(dot(N, H), 0.0, 1.0);
 			float dotVH = clamp(dot(V, H), 0.0, 1.0);
