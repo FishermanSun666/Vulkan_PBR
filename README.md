@@ -25,7 +25,7 @@ f(l,v) = \frac{{C}_{diff}}{\pi}
 
 In the realm of BRDF models, I have chosen the Cook-Torrance BRDF. This model is the most commonly employed in practice. It models the scattering from a single layer of microsurfaces in a geometric optical system, neglecting considerations of multiple scatterings, layered materials, and diffraction. Let's delve into the holistic representation of this formula:
 
-$${L}_{0}(p,{\omega}_{0})=\int^{}_{\Omega}{{k}_{d}\frac{c}{\pi}+\frac{DFG}{4({\omega}_{0}\cdot\n)({\omega}_{i}\cdot\n)(p,{\omega}_{i})n\cdot{\omega}_{i}d{\omega}_{i}}}$$
+$$\{L}_{0}(p,{\omega}_{0})=\int^{}_{\Omega}{{k}_{d}\frac{c}{\pi}+\frac{DFG}{4({\omega}_{0}\cdot\n)({\omega}_{i}\cdot n)(p,{\omega}_{i})n\cdot{\omega}_{i}d{\omega}_{i}}}$$
 
 #### Specular D
 
