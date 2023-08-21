@@ -111,7 +111,7 @@ public:
 
 	UI* ui;
 	//Rotate model
-	bool rotateModel = false;
+	bool rotateModel = true;
 	glm::vec3 modelrot = glm::vec3(0.0f);
 	glm::vec3 modelPos = glm::vec3(0.0f);
 
@@ -134,7 +134,7 @@ public:
 	} pushConstBlockMaterial;
 	//Environments
 	std::map<std::string, std::string> environments;
-	std::string selectedEnvironment = "papermill";
+	std::string selectedEnvironment = "cyberpunk";
 	//Debug
 	int32_t debugViewInputs = 0;
 	int32_t debugViewEquation = 0;

@@ -77,6 +77,7 @@ public:
 		bool fullscreen = false;
 		bool vsync = false;
 		bool multiSampling = true;
+		bool SpecularGlossiness = false;
 		VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_8_BIT;
 	} settings;
 

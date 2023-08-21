@@ -61,7 +61,7 @@ void Renderer::renderNode(vkglTF::Node* node, uint32_t cbIndex, vkglTF::Material
 					pushConstBlockMaterial.colorTextureSet = primitive->material.baseColorTexture != nullptr ? primitive->material.texCoordSets.baseColor : -1;
 				}
 
-				if (primitive->material.pbrWorkflows.specularGlossiness)
+				if (primitive->material.pbrWorkflows.specularGlossiness || settings.SpecularGlossiness)
 				{
 					// Specular glossiness workflow
 					pushConstBlockMaterial.workflow = static_cast<float>(PBR_WORKFLOW_SPECULAR_GLOSINESS);
@@ -1443,6 +1443,7 @@ void Renderer::updateUniformBuffers()
 	sceneUBO.model[1][1] = scale;
 	sceneUBO.model[2][2] = scale;
 	sceneUBO.model = glm::translate(sceneUBO.model, translate);
+	sceneUBO.model = glm::rotate(sceneUBO.model, modelrot.y, glm::vec3(0.0f, 1.0f, 0.0f));
 
 	sceneUBO.camPos = glm::vec3(
 		-camera.position.z * sin(glm::radians(camera.rotation.y)) * cos(glm::radians(camera.rotation.x)),
@@ -1495,7 +1496,7 @@ void Renderer::updateOverlay()
 	ImGui::NewFrame();
 
 	ImGui::SetNextWindowPos(ImVec2(width - 400, 10));
-	ImGui::SetNextWindowSize(ImVec2(300 * scale, (modelSet.scene.animations.size() > 0 ? 440 : 360) * scale), ImGuiSetCond_Always);
+	ImGui::SetNextWindowSize(ImVec2(300 * scale, (modelSet.scene.animations.size() > 0 ? 440 : 480) * scale), ImGuiSetCond_Always);
 	ImGui::Begin("Vulkan PBR", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 	ImGui::PushItemWidth(100.0f * scale);
 
@@ -1503,7 +1504,7 @@ void Renderer::updateOverlay()
 
 	if (ui->header("Scene"))
 	{
-		if (ui->button("Open gltf file"))
+		if (ui->button("Load Model file"))
 		{
 			std::string filename = "";
 #if defined(_WIN32)
@@ -1521,7 +1522,7 @@ void Renderer::updateOverlay()
 			{
 				filename = buffer;
 			}
-#endif
+#endif		
 			if (!filename.empty())
 			{
 				vkDeviceWaitIdle(logicalDevice);
@@ -1530,6 +1531,14 @@ void Renderer::updateOverlay()
 				updateCBs = true;
 			}
 		}
+		if (ui->checkbox("Rotate Model", &rotateModel))
+		{
+			updateShaderParams = true;
+		}
+	}
+
+	if (ui->header("Environment"))
+	{
 		if (ui->combo("Environment", selectedEnvironment, environments))
 		{
 			vkDeviceWaitIdle(logicalDevice);
@@ -1537,10 +1546,7 @@ void Renderer::updateOverlay()
 			setupDescriptors();
 			updateCBs = true;
 		}
-	}
 
-	if (ui->header("Environment"))
-	{
 		if (ui->checkbox("Background", &displayBackground))
 		{
 			updateShaderParams = true;
@@ -1557,12 +1563,17 @@ void Renderer::updateOverlay()
 		{
 			updateShaderParams = true;
 		}
+
 	}
 
 	if (ui->header("Debug view"))
 	{
+		if (ui->checkbox("Specular-Glossiness Workflow", &settings.SpecularGlossiness))
+		{
+			updateShaderParams = true;
+		}
 		const std::vector<std::string> debugNamesInputs = {
-			"none", "Base color", "Normal", "Occlusion", "Emissive", "Metallic", "Roughness"
+			"Blinn-Phong", "Base color", "Normal", "Occlusion", "Emissive", "Metallic", "Roughness"
 		};
 		if (ui->combo("Inputs", &debugViewInputs, debugNamesInputs))
 		{
@@ -1722,7 +1733,7 @@ void Renderer::render()
 	{
 		if (rotateModel)
 		{
-			modelrot.y += frameTimer * 35.0f;
+			modelrot.y += frameTimer * 0.3f;
 			if (modelrot.y > 360.0f)
 			{
 				modelrot.y -= 360.0f;
