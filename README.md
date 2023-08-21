@@ -170,19 +170,14 @@ For this solution, we've opted to follow the methodology presented by UE4, which
     - [x] Metallic-Roughness
     - [x] Specular-Glossiness workflow
 
-  <img src="https://github.com/FishermanSun666/Vulkan_PBR/blob/master/ScreenShoot/boombox.png" alt="boombox" style="zoom:23%;" />
-
   - [x] Animations
     - [x] Articulated (translate, rotate, scale)
     - [x] Skinned
-
-  ![animation](https://github.com/FishermanSun666/Vulkan_PBR/blob/master/ScreenShoot/animation.gif)
 
 - [x] PBR
 
   - [x] Metallic-Roughness workflow
   - [x] Specular-Glossiness workflow
-
 
 - [x] Environment Lighting
   - [x] Diffuse
