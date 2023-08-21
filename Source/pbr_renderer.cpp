@@ -1489,6 +1489,7 @@ void Renderer::updateOverlay()
 	ui->pushConstBlock.scale = glm::vec2(2.0f / io.DisplaySize.x, 2.0f / io.DisplaySize.y);
 	ui->pushConstBlock.translate = glm::vec2(-1.0f);
 
+	bool recreateSC = false;
 	bool updateShaderParams = false;
 	bool updateCBs = false;
 	float scale = 1.0f;
@@ -1531,16 +1532,20 @@ void Renderer::updateOverlay()
 				updateCBs = true;
 			}
 		}
-		if (ui->checkbox("Rotate Model", &rotateModel))
-		{
-			updateShaderParams = true;
-		}
 		if (ui->combo("Environment", selectedEnvironment, environments))
 		{
 			vkDeviceWaitIdle(logicalDevice);
 			loadEnvironment(environments[selectedEnvironment]);
 			setupDescriptors();
 			updateCBs = true;
+		}
+		if (ui->checkbox("Rotate model", &rotateModel))
+		{
+			updateShaderParams = true;
+		}
+		if (ui->checkbox("V-sync", &settings.vsync))
+		{
+			recreateSC = true;
 		}
 	}
 
@@ -1572,7 +1577,7 @@ void Renderer::updateOverlay()
 			updateShaderParams = true;
 		}
 		const std::vector<std::string> debugNamesInputs = {
-			"Blinn-Phong", "Base color", "Normal", "Occlusion", "Emissive", "Metallic", "Roughness"
+			"PBR", "Blinn-Phong", "Normal", "Occlusion", "Emissive", "Metallic", "Roughness"
 		};
 		if (ui->combo("Inputs", &debugViewInputs, debugNamesInputs))
 		{
@@ -1657,6 +1662,10 @@ void Renderer::updateOverlay()
 		updateCBs = true;
 	}
 
+	if (recreateSC)
+	{
+		windowResize();
+	}
 	if (updateCBs)
 	{
 		vkDeviceWaitIdle(logicalDevice);

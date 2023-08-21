@@ -138,7 +138,6 @@ public:
 	//Debug
 	int32_t debugViewInputs = 0;
 	int32_t debugViewEquation = 0;
-
 	Renderer() : VulkanExampleBase()
 	{
 		title = "Vulkan-PBR-glTF";

@@ -59,7 +59,7 @@ protected:
 	VulkanSwapchain swapchain;
 	std::string title = "PBR Renderer";
 	std::string name = "pbrRenderer";
-	void windowResize();
+	void windowResize(bool manual = false);
 public:
 	static std::vector<const char*> args;
 	bool prepared = false;
@@ -76,7 +76,7 @@ public:
 		bool validation = false;
 		bool fullscreen = false;
 		bool vsync = false;
-		bool multiSampling = true;
+		bool multiSampling = false;
 		bool SpecularGlossiness = false;
 		VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_8_BIT;
 	} settings;

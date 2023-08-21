@@ -928,7 +928,7 @@ void VulkanExampleBase::setupFrameBuffer()
 	}
 }
 
-void VulkanExampleBase::windowResize()
+void VulkanExampleBase::windowResize(bool manual)
 {
 	if (!prepared)
 	{
