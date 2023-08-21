@@ -8,7 +8,7 @@ This project is a PBR renderer implemented on a framework built with Vulkan 1.3.
 
 ## Video link
 
-https://youtu.be/aSoyZY3B76w
+[https://youtu.be/aSoyZY3B76w](https://youtu.be/H7VxnjlJzZA)
 
 ## PBR
 
