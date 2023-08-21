@@ -24,9 +24,9 @@ f(l,v) = \frac{{C}_{diff}}{\pi}
 ### Cook-Torrance BRDF
 
 In the realm of BRDF models, I have chosen the Cook-Torrance BRDF. This model is the most commonly employed in practice. It models the scattering from a single layer of microsurfaces in a geometric optical system, neglecting considerations of multiple scatterings, layered materials, and diffraction. Let's delve into the holistic representation of this formula:
-
-$$\{L}_{0}(p,{\omega}_{0})=\int^{}_{\Omega}{{k}_{d}\frac{c}{\pi}+\frac{DFG}{4({\omega}_{0}\cdot\n)({\omega}_{i}\cdot n)(p,{\omega}_{i})n\cdot{\omega}_{i}d{\omega}_{i}}}$$
-
+```math
+{L}_{0}(p,{\omega}_{0})=\int^{}_{\Omega}{{k}_{d}\frac{c}{\pi}+\frac{DFG}{4({\omega}_{0}\cdot\n)({\omega}_{i}\cdot n)(p,{\omega}_{i})n\cdot{\omega}_{i}d{\omega}_{i}}}
+```
 #### Specular D
 
 For the normal distribution function, the choice was the GGX / Trowbridge-Reitz, as adopted by Disney. Compared to the Blinn-Phong, the GGX more accurately simulates surfaces with high roughness. It offers stable specular highlights across various roughness levels, and the additional computational cost is relatively insignificant. Currently, GGX has become the preferred choice in many game engines, renderers, and film production tools. Let's delve into the formula for this:
